@@ -1,65 +1,57 @@
-# flotte.py - À COMPLÉTER (épreuve flotte)
-#
-# Conteneur Flotte, à transposer de Bibliotheque (S12) : enveloppe
-# encapsulée d'une liste de Vehicule, exposant len(), in et for.
-# Aucune docstring demandée ; les tests (test_flotte.py) fixent le
-# comportement exact. Complétez les corps « ... ».
 
 from vehicule import Vehicule
 
 
 class Flotte:
-    # Garde l'ordre d'ajout, refuse les doublons par châssis, et expose
-    # les protocoles de conteneur. La hiérarchie Vehicule la traverse
-    # sans aucune modification (polymorphisme) : ni isinstance ni cas
-    # particulier par sous-type.
-
     def __init__(self):
-        # Collection interne : une liste (préserve l'ordre d'ajout).
-        ...
+        self._vehicules = []
 
-    # --- ajouter, retirer ---
+    def _est_vehicule(self, obj):
+        """Vérifie duck typing sans isinstance."""
+        return (hasattr(obj, 'marque') and
+                hasattr(obj, 'modele') and
+                hasattr(obj, 'numero_chassis') and
+                hasattr(obj, 'disponible'))
 
     def ajouter(self, vehicule):
-        # Refuser un objet qui n'est pas un Vehicule (TypeError) et un
-        # doublon de châssis déjà présent (ValueError). Indice : « déjà
-        # présent ? » se teste élégamment avec l'opérateur « in » sur self.
-        ...
+        if not self._est_vehicule(vehicule):
+            raise TypeError(f"Un Vehicule est attendu, reçu : {type(vehicule).__name__}")
+        if vehicule in self:
+            raise ValueError(f"Véhicule déjà présent : {vehicule.numero_chassis}")
+        self._vehicules.append(vehicule)
 
     def retirer(self, vehicule):
-        # Refuser un non-Vehicule (TypeError) ; absent -> KeyError.
-        # __eq__ de Vehicule (par châssis) localise l'élément à retirer.
-        ...
-
-    # --- Protocole de conteneur ---
+        if not self._est_vehicule(vehicule):
+            raise TypeError(f"Un Vehicule est attendu, reçu : {type(vehicule).__name__}")
+        if vehicule not in self:
+            raise KeyError(f"Véhicule introuvable : {vehicule.numero_chassis}")
+        self._vehicules.remove(vehicule)
 
     def __len__(self):
-        ...
+        return len(self._vehicules)
 
     def __contains__(self, item):
-        # Accepter soit un Vehicule (comparé par châssis via __eq__), soit
-        # une chaîne de châssis. Tout autre type -> False (sans lever).
-        ...
+        if self._est_vehicule(item):
+            return any(v == item for v in self._vehicules)
+        if isinstance(item, str):
+            return any(v.numero_chassis == item for v in self._vehicules)
+        return False
 
     def __iter__(self):
-        # Itérer dans l'ordre d'ajout.
-        ...
-
-    # --- Méthodes métier ---
+        return iter(self._vehicules)
 
     def trouver_par_chassis(self, numero_chassis):
-        # Renvoyer le véhicule de ce châssis ; absent -> KeyError.
-        ...
+        for v in self._vehicules:
+            if v.numero_chassis == numero_chassis:
+                return v
+        raise KeyError(f"Véhicule introuvable : {numero_chassis}")
 
     def vehicules_disponibles(self):
-        # Liste des véhicules dont disponible vaut True, dans l'ordre d'ajout.
-        ...
+        return [v for v in self._vehicules if v.disponible]
 
     @property
     def nombre_disponibles(self):
-        ...
-
-    # --- Représentation ---
+        return len(self.vehicules_disponibles())
 
     def __repr__(self):
-        ...
+        return f"Flotte({self._vehicules!r})"
